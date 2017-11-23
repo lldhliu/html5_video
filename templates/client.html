@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>视频详情页</title>
+<link rel="stylesheet" type="text/css" href="http://at.alicdn.com/t/font_u4qz1594lnixusor.css">
+<link rel="stylesheet" type="text/css" href="../static/css/common.css">
+<link rel="stylesheet" type="text/css" href="../static/css/detail_p.css">
+
+<script src="../static/js/jquery-3.0.0.min.js"></script>
+<script type="text/javascript" src="https://cdn-hangzhou.goeasy.io/goeasy.js"></script>
+<!-- <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js"></script> -->
+<script type="text/javascript">
+    $(document).ready(function () {
+
+        /*获取控制对象*/
+        var vids=document.getElementById("vids");
+        var sskd=$(".controls").width();/*替换原来的764*/
+        /*一开始默认的视频路径（每个页面都会有一个默认的视频吧）*/
+        var csdz="/static/media/";
+        /*这一步判断他是什么浏览器，调用不同的格式的视频（这里以mp4为例子）*/
+        var xzdz=".mp4";
+        vids.src="/static/media/02.mp4";
+        $("#pass").css({display:"none"});
+        $("#ztbf").attr("class","iconfont icon-zanting");
+        // myVid=document.getElementById("vids");
+        // myVid.oncanplay=alert("Can start playing video");
+        vids.play();
+
+        /*不论任何途径只要是暂停或者播放*/
+        var onplay=function(order){
+          if (order=='play') {
+            $("#pass").css({display:"none"});
+            $("#ztbf").attr("class","iconfont icon-zanting");
+            vids.play()
+          }
+        }
+        var onpause=function(order){
+          if (order=='pause') {
+            $("#pass").css({display:"block"});
+            $("#ztbf").attr("class","iconfont icon-zanting2");
+            $("#pBar").on('mouseup',function(){
+            	$(this).off('mousemove');
+            });
+            vids.pause()
+          }
+        }
+
+        /*时间转换器*/
+        function numFormat(time){
+            time = parseInt(time);
+            var h = addZero(Math.floor(time/3600));
+            var  m = addZero(Math.floor((time%3600)/60));
+            var s = addZero(Math.floor(time%60));
+            return h+":"+m+":"+s;
+        }
+        function addZero(num){
+            if(num<10){
+                return "0"+num;
+            }else{
+                return ''+num;
+            }
+        }
+        /*当前时间/总的时间(canplay方法开始)*/
+        vids.oncanplay=function(){
+        var aTime=numFormat(vids.duration);
+        $("#aTime").html(aTime);
+        /*第一步,进度条跟着时间动(鼠标点下的时候)*/
+        vids.ontimeupdate=function(){
+        	sskd=$(".controls").width();
+        	var hc=(vids.buffered.length/vids.duration)*sskd;
+        	$("#buff").css({width:hc+'px'});
+        	var nTime=numFormat(vids.currentTime);
+        	$("#nTime").html(nTime);
+        	/*当前的时间比上总的时间乘以总的长度*/
+        	var nLengh=(vids.currentTime/vids.duration)*(sskd-20);
+        	$("#pBar_move").css({width:nLengh+'px'});
+        	}
+        /*第二步,点击时的进度条*/
+        $("#pBar").mousedown(function(e){
+        	var cLk=e.clientX;/*点击距离(点击在进度条区域)*/
+        	var pJl=$("#pBar").offset().left;/*获取进度条距离左边的距离*/
+        	var mLengh=cLk-pJl;/*移动的距离*/
+        	if(mLengh>=(sskd-20)){
+        		mLengh=(sskd-20);
+        		}
+        	$("#pBar_move").css({width:mLengh+'px'});/*改变进度条的距离*/
+        	var cTime1=mLengh/(sskd-20)*vids.duration;
+        	vids.currentTime=cTime1;
+        	var cTime2=numFormat(cTime1);
+        	$("#nTime").html(cTime2);/*改变html的显示时间*/
+        	vids.play();
+        /*---------------------------------鼠标拖拽的距离---------------------------------------*/
+        	$(document).on('mousemove',function(e){
+        		vids.pause();
+        		var newLeft=e.clientX-pJl;/*拖拽的距离*/
+        		if(newLeft<=0){
+                    newLeft=0;
+                }
+        		if(newLeft>=(sskd-20)){
+        			newLeft=(sskd-20);
+        			}
+        		var cTime3=newLeft/(sskd-20)*vids.duration;
+        		var cTime4=numFormat(cTime3);
+        		$("#pBar_move").css({width:newLeft+'px'});
+        		vids.currentTime=cTime3;
+        		$("#nTime").html(cTime4);
+        		})/*拖拽结束*/
+        /*----------------------------------鼠标松开----------------------------------------*/
+            $("body").on('mouseup',function(){
+                $(document).off('mousemove');
+                vids.play();
+                })/*松开结束*/
+            })/*mousedown方法结束*/
+        }/*(canplay方法结束)*/
+
+        var ktui = function(order){
+          if(order=='back'){
+        	  vids.currentTime-=30;
+          }
+        }
+        var kjin = function(order){
+          if(order=='forward'){
+        	  vids.currentTime+=30;
+          }
+        }
+
+        /*-----------退出全屏-----------*/
+        var quitWin = function(order){
+          if (order=='exitfull'){
+            $(".video_ls").removeClass("on");
+            $(".controls").css({width:"764px"})
+          }
+        }
+        /*全屏*/
+        var win = function(order){
+          if (order=='full'){
+            $(".video_ls").addClass("on");
+            var oBox=$("body").width()-66;
+            $(".controls").css({width:oBox+'px'})
+          }
+        }
+
+        /*音量加减*/
+        var voicedown = function(order){
+            if (order=='voicedown'){
+              var newLefts=30;
+              vBtn.style.left = vBtn.offsetLeft - newLefts + "px";
+              console.log(vBtn.style.left);
+              var length = vBar_in.offsetWidth - newLefts;
+              vBar_in.style.width = length + "px";
+              console.log(length);
+              console.log(vBar_in.style.width);
+              var prop = length/(vBar.offsetWidth-vBtn.offsetWidth);
+              console.log(prop);
+              if (prop > 0) {
+                  vids.volume = prop;
+              }
+              else {
+                  vids.volume = 0;
+                  vBtn.style.left = "0px";
+                  vBar_in.style.width = "0px"
+              }
+            }
+          }
+
+
+          var voiceup = function(order){
+            if (order=='voiceup') {
+              var newLefts=30;
+              console.log(vBtn.offsetLeft)
+              // console.log(newLefts)
+              vBtn.style.left = vBtn.offsetLeft + newLefts + "px";
+              console.log(vBtn.style.left);
+              var length = vBar_in.offsetWidth + (newLefts+8);
+              vBar_in.style.width = length + "px";
+              console.log(length);
+              console.log(vBar_in.style.width);
+              var prop = length/(vBar.offsetWidth-vBtn.offsetWidth);
+              console.log(prop);
+              if (prop > 1) {
+                  vids.volume = 1;
+                  vBar_in.style.width = "154px"
+                  vBtn.style.left = "134px"
+              }
+              else {
+                  vids.volume = prop;
+              }
+            }
+        }
+
+        var goEasy = new GoEasy({
+             appkey: 'BC-27c35f3b5d294e888a4fa31c72e0a47b'
+        });
+
+        goEasy.subscribe({
+            channel: 'video_channel',
+            onMessage: function(message){
+                console.log(message.content)
+                var msg = message.content;
+                var msg1 = JSON.parse(msg)
+                var tip = msg1.tip;
+                console.log(tip);
+                if (tip == "video_name") {
+                    var name = msg1.name;
+                    console.log(name);
+                    var num = msg1.num;
+                    console.log(num);
+                    $(".title_top").html(name+num);
+                    $(".video_name").html(name+num);
+                    var vids_src="/static/media/"+name+"/"+num+".mp4";
+                    console.log(vids_src)
+                    $("#pass").css({display:"none"});
+                    $("#ztbf").attr("class","iconfont icon-zanting");
+                    vids.src=vids_src;
+                    vids.play();
+                }
+                else if (tip == "video_order") {
+                    var order = msg1.order;
+                    console.log(order);
+                    if (order=="play") {
+                        onplay(order);
+                    }
+                    else if (order=="pause") {
+                        onpause(order);
+                    }
+                    else if (order=="full") {
+                        win(order);
+                    }
+                    else if (order=="exitfull") {
+                        quitWin(order);
+                    }
+                    else if (order=="forward") {
+                        kjin(order);
+                    }
+                    else if (order=="back") {
+                        ktui(order);
+                    }
+                    else if (order=="voiceup") {
+                        voiceup(order);
+                    }
+                    else if (order=="voicedown") {
+                        voicedown(order);
+                    }
+                }
+
+            }
+        });
+
+    //     var socket = io.connect('http://127.0.0.1:8088/test');
+    //
+    //     var conn = function() {
+    //       socket.on('connect', function() {
+    //           window.setTimeout(function() {
+    //
+    //               socket.emit('name', {data: 'name ok'});
+    //               socket.emit('order', {data: 'order ok'});
+    //           }, 5000)
+    //           console.log('I am connected!');
+    //       });
+    //
+    //
+    //
+    //       socket.on('name', function(msg1) {
+    //           var msg = msg1;
+    //           console.log(msg);
+    //           var name = msg.name;
+    //           var num = msg.num;
+    //           console.log(name);
+    //           console.log(num);
+    //           // $(".title_top").html(name+num);
+    //           // $(".video_name").html(name+num);
+    //           // var vids_src="/static/media/"+name+"/"+num+".mp4";
+    //           // $("#pass").css({display:"none"});
+    //           // $("#ztbf").attr("class","iconfont icon-zanting");
+    //           // vids.src=vids_src;
+    //           // vids.play();
+    //
+    //           if (name !== null || name !== undefined || name !== '') {
+    //             $(".title_top").html(name+num);
+    //             $(".video_name").html(name+num);
+    //             var vids_src="/static/media/"+name+"/"+num+".mp4";
+    //             $("#pass").css({display:"none"});
+    //             $("#ztbf").attr("class","iconfont icon-zanting");
+    //             vids.src=vids_src;
+    //             vids.play();
+    //           }
+    //
+    //       });
+    //
+    //
+    //       socket.on('order', function(msg2) {
+    //           var msg = msg2;
+    //           console.log(msg);
+    //           var order = msg.order;
+    //           console.log(order);
+    //           if (order=="播放") {
+    //               onplay(order);
+    //           }
+    //           else if (order=="暂停") {
+    //               onpause(order);
+    //           }
+    //           else if (order=="全屏") {
+    //               win(order);
+    //           }
+    //           else if (order=="退出全屏") {
+    //               quitWin(order);
+    //           }
+    //           else if (order=="快进") {
+    //               kjin(order);
+    //           }
+    //           else if (order=="快退") {
+    //               ktui(order);
+    //           }
+    //           else if (order=="加声音") {
+    //               voiceup(order);
+    //           }
+    //           else if (order=="减声音") {
+    //               voicedown(order);
+    //           }
+    //           // onplay(order);
+    //           // win(order);
+    //           // quitWin(order);
+    //           // onpause(order);
+    //           // ktui(order);
+    //           // kjin(order);
+    //       });
+    //     };
+    // conn()
+
+    // socket.on('disconnected', function(){
+    //           var socket = io.connect('http://127.0.0.1:8088/test');
+    //           coon()
+    //       });
+    });
+</script>
+
+</head>
+
+<body>
+
+<!--视频的-->
+<div class="videos">
+    <!--bottom-->
+    <div class="video_b" style="margin-top:0">
+    	<div class="video_b_in">
+        	<div class="video_ls">
+            	<video id="vids" preload="auto">
+                您的浏览器不支持h5标签,请升级或换个浏览器
+                </video>
+                <!--标题-->
+                <div class="title_top">
+                	视频播放
+                </div>
+                <!--列表菜单-->
+                <div class="list_right">
+                	<a href="javascript:void(0)" id="like"><i class="iconfont icon-xinxing2"></i></a>
+                    <a href="javascript:void(0)" id="zan"><i class="iconfont icon-dianzan"></i></a>
+                    <a href="javascript:void(0)"><i class="iconfont icon-pinglun"></i></a>
+                    <a href="javascript:void(0)"><i class="iconfont icon-zhuanfa"></i></a>
+                    <a href="javascript:void(0)"><i class="iconfont icon-gerenyetianjiajiaguanzhu"></i></a>
+                </div>
+                <!--暂停-->
+                <div id="pass">
+                	<img src="/static/media/zt.png"/>
+                </div>
+                <!--控制器-->
+                <div class="controls">
+                	<!--进度条容器-->
+                    <div id="pBar">
+                    	<!--进度条底色-->
+                        <div class="pBar_bj">
+                        	<!--缓冲的进度条-->
+                            <div id="buff"></div>
+                        	<!--进度条动态-->
+                        	<div id="pBar_move">
+                            	<!--进度条按钮-->
+                        		<div id="pBtn"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!--展厅播放快进快退音量全屏-->
+                    <div class="trol_list">
+                    	<!--暂停和快进快退-->
+                        <div class="list_1">
+                        	<i class="iconfont icon-kuaitui-copy"></i>
+                            <i class="iconfont icon-zanting2" id="ztbf"></i>
+                            <i class="iconfont icon-kuaijin"></i>
+                        </div>
+                        <!--音量-->
+                        <div class="voice">
+                        	<i class="iconfont icon-yinliang" style="float:left;"></i>
+                            <div class="voicep">
+                            	<div id="vBar">
+                                	<div id="vBar_in"></div>
+                                </div>
+                                <div id="vBtn"></div>
+                            </div>
+                        </div>
+                        <!--时间-->
+                        <div class="vtime">
+                        	<font id="nTime">00:00:00</font>/<em id="aTime">00:00:00</em>
+                        </div>
+                        <!--全屏-->
+                        <i id="qp" class="iconfont icon-quanping"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="video_rs">
+            	<!--top-->
+            	<div class="video_rs_t">
+                	<span>电视剧</span>
+                    29视频
+                    <div class="btnadd">+</div>
+                </div>
+                <!--bottom-->
+                <div class="video_rs_b">
+                	<!--一条-->
+                    <div class="one_tb" vid_src="/static/media/02.mp4">
+                    	<span class="one_tb_l">1</span>
+                        <div class="one_tb_c">
+                        	<img src="/static/media/timg.jpg">
+                            <b></b>
+                        </div>
+                        <div class="one_tb_r">
+                        	<h3 class="video_name"></h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
